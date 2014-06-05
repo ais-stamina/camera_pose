@@ -1,10 +1,12 @@
 import roslib; roslib.load_manifest('camera_pose_calibration')
+import rospy
 import itertools
 import numpy
 import collections
 import cv
 import PyKDL
 from tf_conversions import posemath
+import tf
 
 
 def get_target_pose(cam):
@@ -18,8 +20,8 @@ def get_target_pose(cam):
     rot = cv.CreateMat(3, 1, cv.CV_32FC1)
     trans = cv.CreateMat(3, 1, cv.CV_32FC1)
     cv.FindExtrinsicCameraParams2(object_points, image_points, cv.fromarray(camera_matrix), dist_coeffs, rot, trans)
-    # print "Rot: %f, %f, %f" % ( rot[0,0], rot[1,0], rot[2,0] )
-    # print "Trans: %f, %f, %f" % ( trans[0,0], trans[1,0], trans[2,0] )
+    #print "Rot: %f, %f, %f" % ( rot[0,0], rot[1,0], rot[2,0] )
+    #print "Trans: %f, %f, %f" % ( trans[0,0], trans[1,0], trans[2,0] )
     rot3x3 = cv.CreateMat(3, 3, cv.CV_32FC1)
     cv.Rodrigues2(rot, rot3x3)
     frame = PyKDL.Frame()
@@ -34,9 +36,32 @@ def read_observations(meas):
     # Stores the checkerboards observed by two cameras
     # camera_id -> camera_id -> [ (cb pose, cb pose, cb id) ]
     mutual_observations = collections.defaultdict(lambda: collections.defaultdict(list))
+
+    # Checkerboard frame
+    # 1 0 0 -1
+    # 0 1 0 -1
+    # 0 0 1 -1
+    # 0 0 0  1
+    ch = PyKDL.Frame()
+    ch.p[0] = 0
+    ch.p[1] = 0
+    ch.p[2] = 0
+    ch.p[3] = 1
+    rot = cv.CreateMat(3, 1, cv.CV_32FC1)
+    rot3x3 = cv.CreateMat(3, 3, cv.CV_32FC1)
+    cv.Rodrigues2(rot, rot3x3)
+    for i in range(3):
+        for j in range(3):
+            ch.M[i,j] = rot3x3[i,j]
     
     checkerboard_id = 0
     for msg in meas:
+        
+        # dummy checkeboard observation
+        for cam in msg.M_cam:
+            p = get_target_pose(cam)
+            mutual_observations["checkerboard_id"][cam.camera_id].append( (ch, p, checkerboard_id) );
+        
         for M_cam1, M_cam2 in itertools.combinations(msg.M_cam, 2):
             cam1 = M_cam1.camera_id
             cam2 = M_cam2.camera_id
@@ -56,7 +81,21 @@ def read_observations(meas):
 # checkerboards_seen: checkerboard_id -> pose
 def bfs(root_cam, observations, cameras_seen, checkerboards_seen):
     q = [root_cam]
-    cameras_seen[root_cam] = PyKDL.Frame()
+
+    frame = PyKDL.Frame()
+    tf_listener = tf.TransformListener()
+    while not rospy.is_shutdown():
+        try:                
+            tf_listener.waitForTransform("/base_link", "/checkerboard_id", rospy.Time(0), rospy.Duration(10))
+            t = tf_listener.lookupTransform("/base_link", "/checkerboard_id", rospy.Time(0))
+            v = PyKDL.Vector(t[0][0],t[0][1],t[0][2])
+            r = PyKDL.Rotation.Quaternion(t[1][0],t[1][1],t[1][2], t[1][3])
+            frame = PyKDL.Frame(r, v)
+            break
+        except (tf.LookupException, tf.ConnectivityException):
+            rospy.logerror("No transform from /base_link to /checkerboard_id found. Retrying...")
+
+    cameras_seen[root_cam] = frame
     while q:
         cam1, q = q[0], q[1:]  # pop
         cam1_pose = cameras_seen[cam1]
@@ -77,8 +116,9 @@ def find_initial_poses(meas, root_cam = None):
     mutual_observations = read_observations(meas)
 
     if not root_cam:
-        root_cam = mutual_observations.keys()[0]
+        root_cam = "checkerboard_id"#mutual_observations.keys()[0]
     camera_poses = {}
     checkerboard_poses = {}
     bfs(root_cam, mutual_observations, camera_poses, checkerboard_poses)
+    del camera_poses["checkerboard_id"]
     return camera_poses, checkerboard_poses

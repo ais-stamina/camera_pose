@@ -1,34 +1,31 @@
 cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+project(camera_pose_calibration)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+find_package(catkin REQUIRED COMPONENTS rospy
+										geometry_msgs
+										calibration_msgs
+										sensor_msgs
+										image_cb_detector
+										monocam_settler
+										interval_intersection
+										joint_states_settler
+										orocos_kdl
+										tf_conversions
+										tf2_ros
+										tf2_kdl
+										message_filters
+										OpenCV)
 
-rosbuild_init()
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+add_message_files(
+   FILES
+   CalibrationEstimate.msg
+   CameraCalibration.msg
+   CameraMeasurement.msg
+   CameraPose.msg
+   RobotMeasurement.msg
+)
 
-#uncomment if you have defined messages
-rosbuild_genmsg()
-#uncomment if you have defined services
-rosbuild_gensrv()
+generate_messages(DEPENDENCIES geometry_msgs calibration_msgs sensor_msgs)
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
-
-#rosbuild_download_test_data(http://pr.willowgarage.com/data/camera_pose_calibration/camera_pose_cal_regression_data.bag test/camera_pose_cal_regression_data.bag fcd96a5c7a74a064640753fd9d82fff3)
-#rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_camera_pose_calibration.launch)
-
+catkin_package()

@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<package>
+  <name>camera_pose_calibration</name>
+  <version>0.1.0</version>
+  <description>
+    This package provides the pipeline to calibrate the relative 6D
+    poses between multiple camera's. The calibration can be preformed
+    online, and the results are published to tf in realtime.
+  </description>
+  
+  <maintainer email="TODO@todo.com">Vijay Pradeep, Wim Meeussen</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/camera_pose_calibration</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>calibration_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  
+  <build_depend>image_cb_detector</build_depend>
+  <build_depend>monocam_settler</build_depend>
+  <build_depend>interval_intersection</build_depend>
+  <build_depend>joint_states_settler</build_depend>
+  
+  <build_depend>kdl</build_depend>
+  <build_depend>tf_conversions</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>tf2_kdl</build_depend>
+  <build_depend>message_filters</build_depend>
+  <build_depend>opencv2</build_depend>
+  
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>calibration_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  
+  <run_depend>image_cb_detector</run_depend>
+  <run_depend>monocam_settler</run_depend>
+  <run_depend>interval_intersection</run_depend>
+  <run_depend>joint_states_settler</run_depend>
+  
+  <run_depend>kdl</run_depend>
+  <run_depend>tf_conversions</run_depend>
+  <run_depend>tf2_ros</run_depend>
+  <run_depend>tf2_kdl</run_depend>
+  <run_depend>message_filters</run_depend>
+  <run_depend>opencv2</run_depend>
+
+</package>

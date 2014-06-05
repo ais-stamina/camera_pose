@@ -16,9 +16,9 @@ from std_msgs.msg import Empty
 from camera_pose_calibration.msg import CalibrationEstimate
 from camera_pose_calibration.msg import CameraPose
 from camera_pose_calibration.msg import RobotMeasurement, CameraCalibration
-from camera_pose_calibration import init_optimization_prior
-from camera_pose_calibration import estimate
-from camera_pose_calibration import camera_info_converter
+import init_optimization_prior
+import estimate
+import camera_info_converter
 from std_msgs.msg import Time
 from sensor_msgs.msg import CameraInfo
 
@@ -182,15 +182,10 @@ class Estimator:
 
             # add measurements to list
             self.meas.append(msg)
-            print "MEAS", len(self.meas)
-            for m in self.meas:
-                print " - stamp: %f"%m.header.stamp.to_sec()
-            
-            print "\n"
             
             self.measurement_count += 1
 
-            print "\nNo. of measurements fed to optimizer: %d\n\n" %  self.measurement_count
+            rospy.loginfo("No. of measurements fed to optimizer: %d" %  self.measurement_count)
 
             ## self.last_stamp_pub.publish(self.meas[-1].header.stamp)
 
@@ -201,12 +196,12 @@ class Estimator:
                 self.state.targets = [ posemath.toMsg(checkerboard_poses[i]) for i in range(len(checkerboard_poses)) ]
                 self.state.cameras = [ CameraPose(camera_id, posemath.toMsg(camera_pose)) for camera_id, camera_pose in camera_poses.iteritems()]
 
-            print "Proceed to optimization...\n"
+            rospy.loginfo("Proceed to optimization...")
 
             # run optimization
             self.state = estimate.enhance(self.meas, self.state)
 
-            print "\nOptimized!\n"
+            rospy.loginfo("Optimized!")
 
             # publish calibration state
             res = CameraCalibration()  ## initialize a new Message instance
