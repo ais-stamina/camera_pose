@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS rospy
 										monocam_settler
 										interval_intersection
 										joint_states_settler
-										orocos_kdl
+										#orocos_kdl
 										tf_conversions
 										tf2_ros
 										tf2_kdl

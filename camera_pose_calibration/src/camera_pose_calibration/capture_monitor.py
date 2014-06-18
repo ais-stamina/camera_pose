@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import roslib; roslib.load_manifest('camera_pose_calibration')
-import cv
+from cv2 import cv
 from cv_bridge import CvBridge, CvBridgeError
 import rospy
 import threading
@@ -67,7 +67,9 @@ class ImageRenderer:
     def render(self, window):
         with self.lock:
             if self.image and self.image_time + rospy.Duration(2.0) > rospy.Time.now() and self.info_time + rospy.Duration(2.0) > rospy.Time.now():
-                cv.Resize(self.bridge.imgmsg_to_cv(self.image, 'rgb8'), window)
+                cv2mat = self.bridge.imgmsg_to_cv2(self.image, 'rgb8')
+                cvmat = cv.fromarray(cv2mat)
+                cv.Resize(cvmat, window)
                 interval = min(1,(self.interval / self.max_interval))
                 cv.Rectangle(window,
                              (int(0.05*window.width), int(window.height*0.9)),
@@ -86,9 +88,9 @@ class ImageRenderer:
                         for cur_pt in self.features.image_points:
                             cv.Circle(window, (int(cur_pt.x*w_scaling), int(cur_pt.y*h_scaling)), int(w_scaling*5), corner_color)
                     else:
-                        window = add_text(window, ["Could not detect", "checkerboard"], False)
+                        window = add_text(cv2mat, ["Could not detect", "checkerboard"], False)
                 else:
-                    window = add_text(window, ["Timed out waiting", "for checkerboard"], False)
+                    window = add_text(cv2mat, ["Timed out waiting", "for checkerboard"], False)
 
             else:
                 # Generate random white noise (for fun)
@@ -104,18 +106,19 @@ def add_text(image, text, good = True):
         color = (0, 255, 0)
     else:
         color = (0, 0, 255)
-    w = image.cols
-    h = image.rows
+    (w, h, depth) = image.shape
+    cvmat = cv.fromarray(image)
     for i in range(len(text)):
         font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.30, float(w)/350, thickness = 1)
         ((text_w, text_h), _) = cv.GetTextSize(text[i], font)
-        cv.PutText(image, text[i], (w/2-text_w/2, h/2-text_h/2 + i*text_h*2), font, color)
+        cv.PutText(cvmat, text[i], (w/2-text_w/2, h/2-text_h/2 + i*text_h*2), font, color)
     return image
 
 
 
 def get_image(text, good=True, h=480, w=640):
-    image = cv.CreateMat(h, w, cv.CV_8UC3)
+    image = numpy.zeros((h,w,3), numpy.uint8)
+    #image = cv.CreateMat(h, w, cv.CV_8UC3)
     return add_text(image, text, good)
 
 
@@ -128,7 +131,8 @@ class Aggregator:
         # image
         w = 640
         h = 480
-        self.image_out = cv.CreateMat(h, w, cv.CV_8UC3)
+        #self.image_out = cv.CreateMat(h, w, cv.CV_8UC3)
+        self.image_out = numpy.zeros((h, w, 3), numpy.uint8)
         self.pub = rospy.Publisher('aggregated_image', Image)
         self.bridge = CvBridge()
 
@@ -142,9 +146,10 @@ class Aggregator:
         sub_w = w / layout[0]
         sub_h = h / layout[1]
         self.windows = []
+        cvmat = cv.fromarray(self.image_out)
         for j in range(layout[1]):
             for i in range(layout[0]):
-                self.windows.append( cv.GetSubRect(self.image_out, (i*sub_w, j*sub_h, sub_w, sub_h) ) )
+                self.windows.append( cv.GetSubRect(cvmat, (i*sub_w, j*sub_h, sub_w, sub_h) ) )
 
         # create renderers
         self.renderer_list = []
@@ -183,9 +188,9 @@ class Aggregator:
 
                 if self.capture_time+rospy.Duration(4.0) > rospy.Time.now():
                     if self.capture_time+rospy.Duration(2.0) > rospy.Time.now():
-                        self.pub.publish(self.bridge.cv_to_imgmsg(self.image_captured, encoding="rgb8"))
+                        self.pub.publish(self.bridge.cv2_to_imgmsg(self.image_captured, encoding="rgb8"))
                     elif self.calibrate_time+rospy.Duration(20.0) > rospy.Time.now():
-                        self.pub.publish(self.bridge.cv_to_imgmsg(self.image_optimized, encoding="rgb8"))
+                        self.pub.publish(self.bridge.cv2_to_imgmsg(self.image_optimized, encoding="rgb8"))
                         if beep_time+rospy.Duration(4.0) < rospy.Time.now():
                             beep_time = rospy.Time.now()
                             beep([(600, 63, 0.1), (800, 63, 0.1), (1000, 63, 0.3)])
@@ -196,7 +201,7 @@ class Aggregator:
                             beep([(400, 63, 0.1), (200, 63, 0.1), (100, 63, 0.6)])
 
                 else:
-                    self.pub.publish(self.bridge.cv_to_imgmsg(self.image_out, encoding="rgb8"))
+                    self.pub.publish(self.bridge.cv2_to_imgmsg(self.image_out, encoding="rgb8"))
 
 
 def main():
