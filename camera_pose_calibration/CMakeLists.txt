@@ -13,9 +13,7 @@ find_package(catkin REQUIRED COMPONENTS rospy
 										tf_conversions
 										tf2_ros
 										tf2_kdl
-										message_filters
-										OpenCV)
-
+										message_filters)
 
 add_message_files(
    FILES
