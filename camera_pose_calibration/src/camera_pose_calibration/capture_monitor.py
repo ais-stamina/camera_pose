@@ -195,7 +195,7 @@ class Aggregator:
                             beep_time = rospy.Time.now()
                             beep([(600, 63, 0.1), (800, 63, 0.1), (1000, 63, 0.3)])
                     else:
-                        self.pub.publish(self.bridge.cv_to_imgmsg(self.image_failed, encoding="rgb8"))
+                        self.pub.publish(self.bridge.cv2_to_imgmsg(self.image_failed, encoding="rgb8"))
                         if beep_time+rospy.Duration(4.0) < rospy.Time.now():
                             beep_time = rospy.Time.now()
                             beep([(400, 63, 0.1), (200, 63, 0.1), (100, 63, 0.6)])

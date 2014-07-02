@@ -1,10 +1,14 @@
 <launch>
-  <arg name="cache_file" default="/tmp/camera_pose_calibration_cache.bag" />
+  <!--<arg name="cache_file" default="/tmp/camera_pose_calibration_cache.bag" />
 
   <node type="msg_saver.py" pkg="camera_pose_calibration" name="cal_saver" output="screen"
         args="camera_calibration camera_pose_calibration/CameraCalibration $(arg cache_file)" />
 
-  <node type="buffer_server" pkg="tf2_ros" name="tf2_buffer_server" output="screen"/>
+  <node type="buffer_server" pkg="tf2_ros" name="tf2_buffer_server" output="screen"/>-->
   
-  <node type="stamina_calibration_transform_publisher.py" pkg="camera_pose_calibration" name="stamina_calibration_transform_publisher" output="screen"/>
+  <node type="stamina_calibration_transform_publisher.py"
+        pkg="camera_pose_calibration"
+        name="stamina_calibration_transform_publisher"
+        args="./ur10.urdf endeffector_camera_rgb_optical_frame:endeffector_camera_frame_joint "
+        output="screen"/>
 </launch>

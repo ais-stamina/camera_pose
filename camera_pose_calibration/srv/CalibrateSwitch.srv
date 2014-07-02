@@ -1,0 +1,5 @@
+# request: 1 turn on, 0 switch off
+int32 switch
+---
+# response: 1 success, 0 failure
+int32 success

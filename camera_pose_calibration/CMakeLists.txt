@@ -14,6 +14,11 @@ find_package(catkin REQUIRED COMPONENTS rospy
 										tf2_ros
 										tf2_kdl
 										message_filters)
+										
+add_service_files(
+  FILES
+  CalibrateSwitch.srv
+)
 
 add_message_files(
    FILES

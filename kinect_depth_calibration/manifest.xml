@@ -10,7 +10,7 @@
   <url>http://ros.org/wiki/kinect_depth_calibration</url>
   <depend package="rospy"/>
   <depend package="roslib"/>
-  <depend package="opencv2"/>
+  <depend package="opencv"/>
   <depend package="cv_bridge"/>
   <depend package="geometry_msgs"/>
   <depend package="sensor_msgs"/>

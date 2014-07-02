@@ -1,6 +1,6 @@
 <launch>
-  <arg name="camera1_name" default="openni_a" />
-  <arg name="camera2_name" default="openni_b" />
+  <arg name="camera1_name" default="camera_top_left" />
+  <arg name="camera2_name" default="endeffector_camera" />
   <arg name="camera1_ns" default="$(arg camera1_name)/rgb" />
   <arg name="camera2_ns" default="$(arg camera2_name)/rgb" />
   <arg name="checker_rows" default="4"/>
@@ -68,6 +68,12 @@
   </node>
   
   <!-- The static pose of the checkerboard -->
-  <node pkg="tf" type="static_transform_publisher" name="checkerboard_publisher" args="0.6 0 -0.18 -3.14 0 -3.14 /base_link /checkerboard_id 100" />
+  <node pkg="tf" type="static_transform_publisher" name="checkerboard_publisher" args="0.6 0 -0.165 -3.14 0 -3.14 /base_link /checkerboard_id 100" />
+
+  <!-- <node type="stamina_calibration_transform_publisher.py"
+        pkg="camera_pose_calibration"
+        name="stamina_calibration_transform_publisher"
+        args="./ur10.urdf /endeffector_camera_rgb_optical_frame:endeffector_camera_frame_joint /camera_top_left_rgb_optical_frame:camera_top_left_frame_joint"
+        output="screen"/>-->
 
 </launch>

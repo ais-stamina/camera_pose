@@ -6,65 +6,80 @@ import math
 import threading
 import tf2_ros
 import tf
-from geometry_msgs.msg import TransformStamped
 from tf_conversions import posemath
 from geometry_msgs.msg import TransformStamped
 from camera_pose_calibration.msg import CameraCalibration
+from calibration_estimation.single_transform import quat_to_rpy
+from calibration_estimation.urdf_params import UrdfParams
+from update_urdf import update_urdf
 
-class CameraPublisher:
-    def __init__(self, pose, child_frame_id, tf_listener):
-        self.camera_id = child_frame_id.replace("_rgb_optical_frame", "")
+
+class CameraTransformator:
+    '''
+    Given a new pose of the camera in the world frame compute the 
+    transformation between the camera link and its parent link
+    '''
+        
+    def __init__(self, joint, chain, tf_listener, world_frame = "base_link"):
+
+        self.joint = joint
+        self.chain = chain
+        self.world_frame = world_frame
         self.lock = threading.Lock()
-        self.tf_listener = tf_listener
-        #self.pub = tf2_ros.TransformBroadcaster()
-        self.tf_broadcaster = tf.TransformBroadcaster()
         
-        #self.pose = pose
-        self.set_pose(pose, child_frame_id)
+        self.tf_listener = tf_listener
+        #self.tf_broadcaster = tf.TransformBroadcaster()
+        self.precompute()
         
 
-    def set_pose(self, pose, child_frame_id):
+    def set_pose(self, pose):
         with self.lock:
-            self.transform = TransformStamped()
-            self.transform.header.frame_id = 'base_link'
-            self.transform.child_frame_id = child_frame_id
-            self.transform.transform.translation.x = pose.position.x
-            self.transform.transform.translation.y = pose.position.y
-            self.transform.transform.translation.z = pose.position.z
-            self.transform.transform.rotation.x = pose.orientation.x
-            self.transform.transform.rotation.y = pose.orientation.y
-            self.transform.transform.rotation.z = pose.orientation.z
-            self.transform.transform.rotation.w = pose.orientation.w
             self.pose = posemath.fromTf(((pose.position.x, pose.position.y, pose.position.z), \
                                          (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)))
 
-    def publish(self):
+    def precompute(self):
+        '''
+        Precomputed the transformation chain from the optical frame to the camera link
+        since it's assumed to be static
+        '''
+        # calculating the chain of transformations 
+        # (presumably from the optical frame (to which we have the world frame transform)
+        # to the child link of the joint in question
+        transformations = list()
+        for i in xrange(len(self.chain)-1, 0, -2):
+            from_link = self.chain[i]
+            to_link = self.chain[i - 2] # assuming alternating link/joint
+                
+            transform = self._get_transform(from_link, to_link);
+            if transform is None:
+                rospy.logerror("Unable to get the transform %s -> %s", from_link, to_link)
+                return
+                
+            transformations.append(transform)
+         
+        self.optframe_camframe = reduce(lambda a, b: b*a, transformations)
+         
+        # computing the transform: joint's parent link -> world frame 
+        self.lparent_world = self._get_transform(self.joint.parent, self.world_frame);
+        if self.lparent_world is None:
+            rospy.logerror("Unable to get transform %s -> %s", self.joint.parent, self.world_frame)
+            return 
+        
+        
+    def get_transform(self):
         with self.lock:
-            #rospy.loginfo("Trying to get the transforms")
-            # publishing the transform base -> link
-            frame_to_optical_frame = self._get_transform(self.camera_id + "_rgb_frame", \
-                                                    self.camera_id + "_rgb_optical_frame");
-            if frame_to_optical_frame is None:
-                return
-
-            link_to_frame = self._get_transform(self.camera_id + "_link", \
-                                           self.camera_id + "_rgb_frame");
-                                           
-            if link_to_frame is None:
-                return
+            # computing the transform: joint's child link -> world frame
+            lchild_world = self.pose.Inverse() * self.optframe_camframe
             
-            optical_frame_to_base_link = self.pose#self._get_transform("base_link", \
-                                         #               self.camera_id + "_rgb_optical_frame");
+            # finally the transform: parent_link -> child_link
+            t = self.lparent_world * lchild_world.Inverse()
             
-            if optical_frame_to_base_link is None:
-                return
-        
-            # Transform base -> _link = base -> _rgb_optical_frame * _rgb_optical_frame -> _rgb_frame * _rgb_frame -> _link
-            #rospy.loginfo("Got all transforms. Computing and publishing...")
-        
-            transform = optical_frame_to_base_link * frame_to_optical_frame.Inverse() * link_to_frame.Inverse()
-            (trans, rot) = posemath.toTf(transform)
-            self.tf_broadcaster.sendTransform(trans, rot, rospy.Time.now(), self.camera_id + "_link", "base_link")
+            rot = t.M.GetRPY()
+            return (t.p.x(), t.p.y(), t.p.z(), rot[0], rot[1], rot[2])
+            
+            #transform = optical_frame_to_base_link * frame_to_optical_frame.Inverse() * link_to_frame.Inverse()
+            #(trans, rot) = posemath.toTf(transform)
+            #self.tf_broadcaster.sendTransform(trans, rot, rospy.Time.now(), self.camera_id + "_link", "base_link")
             
             #self.transform.header.stamp = rospy.Time.now() + rospy.Duration(0.5)
             #self.pub.sendTransform(self.transform)
@@ -75,50 +90,93 @@ class CameraPublisher:
              self.tf_listener.waitForTransform(from_, to_, rospy.Time(0), rospy.Duration(5))
              return posemath.fromTf( self.tf_listener.lookupTransform(from_, to_, rospy.Time(0)) )
          except (tf.Exception):
-             rospy.logdebug("Transform lookup from %s to %s failed. Retrying..." % (from_, to_))
-        
+             rospy.logdebug("Transform lookup from %s to %s failed." % (from_, to_))
+         
          return None
 
 
-class CalibrationPublishManager:
-    def __init__(self):
+class CalibrationManager:
+    def __init__(self, robot_description, urdf_xml, joint_names):
     
         self.lock = threading.Lock()
+        self.urdf_xml = urdf_xml
         self.publish_list = {}
-        self.sub = rospy.Subscriber('camera_calibration', CameraCalibration, self.cal_cb)
-        
         self.tf_listener = tf.TransformListener()
-        self.tf_broadcaster = tf.TransformBroadcaster()
+        self.config = {'sensors': {'rectified_cams': {}, 'chains': {}, 'tilting_lasers': {}}, 'checkerboards': {}, 'transforms': {}}
+        
+        self.joint_names = joint_names
+        self.robot_params = UrdfParams(robot_description, self.config)
+        self.updated = False
+        self.sub = rospy.Subscriber('camera_calibration', CameraCalibration, self.cal_cb)
+    
+    def is_updated(self):
+        return self.updated
 
     def cal_cb(self, msg):
         with self.lock:
             self.publish_list = {}
             for pose, camera in zip(msg.camera_pose, msg.camera_id):
-                self.publish_list[camera] = CameraPublisher(pose, camera, self.tf_listener)
+                camera = camera.strip("/")
+                if not camera in self.publish_list and camera in self.joint_names:
+                    joint = self.robot_params.urdf.joint_map[self.joint_names[camera]]
+                    chain = self.robot_params.urdf.get_chain(joint.child, camera.strip("/"))
+                    self.publish_list[camera] = CameraTransformator(joint, chain, self.tf_listener)
+                
+                self.publish_list[camera].set_pose(pose)
+                self.updated = True
 
-
-    def publish(self):
+    def update(self):
         with self.lock:
-            for name, pub in self.publish_list.iteritems():
-                pub.publish()
+            transforms = {}
+            for link_name, joint_name in self.joint_names.iteritems():
+                transforms[joint_name] = self.publish_list[link_name].get_transform()
+            
+            self.config['transforms'] = transforms
+            self.robot_params.configure(self.robot_params.get_clean_urdf(), self.config)
+            new_urdf = update_urdf(self.robot_params.get_clean_urdf(), self.robot_params)
+        
+            # write out to URDF
+            outfile = open(self.urdf_xml, 'w')
+            rospy.loginfo('Writing model updates to %s', self.urdf_xml)
+            outfile.write( new_urdf.to_xml_string() )
+            outfile.close()
+            
+            # updating the description
+            rospy.set_param("robot_description", new_urdf.to_xml_string())
+            
+            self.updated = False
 
+
+def usage():
+    return "Usage: <path_to_urdf>, <link>:<joint> [<link>:<joint> [...]]"
 
 def main():
     rospy.init_node('stamina_calibration_tf_publisher')
+    robot_description = rospy.get_param("robot_description")
     r = rospy.Rate(5)
     
-    #cam_param = "/stamina_camera_driver/cameras"
+    if (len(rospy.myargv()) < 3):
+        rospy.logerror(usage())
+        return
+    else:
+        # the keys are the optical frames of the calibrated cameras
+        # the values are the fixed joints of the cameras and their base
+        cam_dict = {}
+        urdf_xml = rospy.myargv()[1]
+        try:
+            for i in xrange(2, len(rospy.myargv())):
+                [cam_link, joint] = rospy.myargv()[i].split(':')
+                cam_dict[cam_link] = joint
+        except:
+            rospy.logerror(usage())
+            return
     
-    #try:
-    #    cameras = rospy.get_param(cam_param)
-    #except KeyError:
-    #    rospy.logerror("Parameter %s is not set. Make sure the driver is loaded." % cam_param)
-    #    return
-    
-    c = CalibrationPublishManager()
+    print cam_dict
+    c = CalibrationManager(robot_description, urdf_xml, cam_dict)
     
     while not rospy.is_shutdown():
-        c.publish()
+        if c.is_updated():
+            c.update()
         
         try:
             r.sleep()
