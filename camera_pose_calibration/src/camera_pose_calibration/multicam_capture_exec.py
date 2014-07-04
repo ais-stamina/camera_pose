@@ -63,6 +63,11 @@ class CameraCaptureExecutive:
         self.cam_managers   = [ (cam_id,   CamManager(  cam_id,  cam_info_topic, 
                                                         self.add_cam_measurement) )   for cam_id   in cam_ids ]
 
+        # Set up the cache with only the sensors we care about
+        chain_ids = []
+        laser_ids = []
+        self.cache.reconfigure(cam_ids, chain_ids, laser_ids)
+        
         # Turn on all of the camera modes into verbose model, since we want the CalibrationPattern data
         for cam_manager in zip(*self.cam_managers)[1]:
             cam_manager.enable(verbose=True)
@@ -70,11 +75,6 @@ class CameraCaptureExecutive:
         # Subscribe to topic containing stable intervals
         self.measurement_pub = rospy.Publisher("robot_measurement", RobotMeasurement)
         self.request_interval_sub = rospy.Subscriber("request_interval", Interval, self.request_callback)
-
-        # Set up the cache with only the sensors we care about
-        chain_ids = []
-        laser_ids = []
-        self.cache.reconfigure(cam_ids, chain_ids, laser_ids)
 
     def request_callback(self, msg):
 

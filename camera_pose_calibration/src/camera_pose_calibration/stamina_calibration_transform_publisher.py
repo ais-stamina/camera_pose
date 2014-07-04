@@ -62,17 +62,17 @@ class CameraTransformator:
         # computing the transform: joint's parent link -> world frame 
         self.lparent_world = self._get_transform(self.joint.parent, self.world_frame);
         if self.lparent_world is None:
-            rospy.logerror("Unable to get transform %s -> %s", self.joint.parent, self.world_frame)
+            rospy.logerr("Unable to get transform %s -> %s", self.joint.parent, self.world_frame)
             return 
         
         
     def get_transform(self):
         with self.lock:
             # computing the transform: joint's child link -> world frame
-            lchild_world = self.pose.Inverse() * self.optframe_camframe
+            lchild_world = self.pose * self.optframe_camframe
             
             # finally the transform: parent_link -> child_link
-            t = self.lparent_world * lchild_world.Inverse()
+            t = self.lparent_world * lchild_world
             
             rot = t.M.GetRPY()
             return (t.p.x(), t.p.y(), t.p.z(), rot[0], rot[1], rot[2])
@@ -119,9 +119,10 @@ class CalibrationManager:
                 camera = camera.strip("/")
                 if not camera in self.publish_list and camera in self.joint_names:
                     joint = self.robot_params.urdf.joint_map[self.joint_names[camera]]
-                    chain = self.robot_params.urdf.get_chain(joint.child, camera.strip("/"))
+                    chain = self.robot_params.urdf.get_chain(joint.child, camera)
                     self.publish_list[camera] = CameraTransformator(joint, chain, self.tf_listener)
                 
+                print "New pose for ", camera, "\n", pose
                 self.publish_list[camera].set_pose(pose)
                 self.updated = True
 
@@ -142,6 +143,7 @@ class CalibrationManager:
             outfile.close()
             
             # updating the description
+            rospy.loginfo("Setting the new robot description")
             rospy.set_param("robot_description", new_urdf.to_xml_string())
             
             self.updated = False
@@ -165,7 +167,7 @@ def main():
         urdf_xml = rospy.myargv()[1]
         try:
             for i in xrange(2, len(rospy.myargv())):
-                [cam_link, joint] = rospy.myargv()[i].split(':')
+                [cam_link, joint] = map(lambda x: x.strip("/"), rospy.myargv()[i].split(':'))
                 cam_dict[cam_link] = joint
         except:
             rospy.logerror(usage())
