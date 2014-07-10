@@ -16,6 +16,7 @@
   <build_depend>roscpp</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>calibration_msgs</build_depend>
+  <build_depend>calibration_estimation</build_depend>
   <build_depend>sensor_msgs</build_depend>
   
   <build_depend>image_cb_detector</build_depend>
@@ -32,6 +33,7 @@
   
   <run_depend>geometry_msgs</run_depend>
   <run_depend>calibration_msgs</run_depend>
+  <run_depend>calibration_estimation</run_depend>
   <run_depend>sensor_msgs</run_depend>
   
   <run_depend>image_cb_detector</run_depend>
