@@ -52,7 +52,7 @@ class CameraTransformator:
                 
             transform = self._get_transform(from_link, to_link);
             if transform is None:
-                rospy.logerror("Unable to get the transform %s -> %s", from_link, to_link)
+                rospy.logerr("Unable to get the transform %s -> %s", from_link, to_link)
                 return
                 
             transformations.append(transform)
@@ -158,7 +158,7 @@ def main():
     r = rospy.Rate(5)
     
     if (len(rospy.myargv()) < 3):
-        rospy.logerror(usage())
+        rospy.logerr(usage())
         return
     else:
         # the keys are the optical frames of the calibrated cameras
