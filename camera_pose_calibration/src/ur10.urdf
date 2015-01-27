@@ -253,12 +253,12 @@
   <gazebo reference="wrist_1_link"/>
   <gazebo reference="wrist_2_link"/>
   <gazebo reference="wrist_3_link"/>
-  <joint name="endeffector_camera_frame_joint" type="fixed">
+  <joint name="wrist_camera_frame_joint" type="fixed">
     <origin xyz="0.444859979541 -0.490573541562 0.160347068916" rpy="-1.78497299393 1.48671173388 -1.93695858476"/>
     <parent link="wrist_3_link"/>
-    <child link="endeffector_camera_link"/>
+    <child link="wrist_camera_link"/>
   </joint>
-  <link name="endeffector_camera_link">
+  <link name="wrist_camera_link">
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <mass value="0.1"/>
@@ -277,31 +277,31 @@
       </geometry>
     </collision>
   </link>
-  <link name="endeffector_camera_depth_frame"/>
-  <link name="endeffector_camera_rgb_optical_frame"/>
-  <link name="endeffector_camera_rgb_frame"/>
-  <link name="endeffector_camera_depth_optical_frame"/>
-  <joint name="endeffector_camera_base_link_joint" type="fixed">
+  <link name="wrist_camera_depth_frame"/>
+  <link name="wrist_camera_rgb_optical_frame"/>
+  <link name="wrist_camera_rgb_frame"/>
+  <link name="wrist_camera_depth_optical_frame"/>
+  <joint name="wrist_camera_base_link_joint" type="fixed">
     <origin xyz="0.0 -0.02 0.0" rpy="0.0 0.0 0.0"/>
-    <parent link="endeffector_camera_link"/>
-    <child link="endeffector_camera_depth_frame"/>
+    <parent link="wrist_camera_link"/>
+    <child link="wrist_camera_depth_frame"/>
   </joint>
-  <joint name="endeffector_camera_base_link_joint2" type="fixed">
+  <joint name="wrist_camera_base_link_joint2" type="fixed">
     <origin xyz="0.0 -0.045 0.0" rpy="0.0 0.0 0.0"/>
-    <parent link="endeffector_camera_link"/>
-    <child link="endeffector_camera_rgb_frame"/>
+    <parent link="wrist_camera_link"/>
+    <child link="wrist_camera_rgb_frame"/>
   </joint>
-  <joint name="endeffector_camera_base_link_joint3" type="fixed">
+  <joint name="wrist_camera_base_link_joint3" type="fixed">
     <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
-    <parent link="endeffector_camera_depth_frame"/>
-    <child link="endeffector_camera_depth_optical_frame"/>
+    <parent link="wrist_camera_depth_frame"/>
+    <child link="wrist_camera_depth_optical_frame"/>
   </joint>
-  <joint name="endeffector_camera_base_link_joint4" type="fixed">
+  <joint name="wrist_camera_base_link_joint4" type="fixed">
     <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
-    <parent link="endeffector_camera_rgb_frame"/>
-    <child link="endeffector_camera_rgb_optical_frame"/>
+    <parent link="wrist_camera_rgb_frame"/>
+    <child link="wrist_camera_rgb_optical_frame"/>
   </joint>
-  <gazebo reference="endeffector_camera_link"/>
+  <gazebo reference="wrist_camera_link"/>
   <link name="finger_1_link_0">
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
@@ -918,12 +918,12 @@
       </geometry>
     </collision>
   </link>
-  <joint name="camera_top_left_frame_joint" type="fixed">
+  <joint name="workspace_camera_right_frame_joint" type="fixed">
     <origin xyz="1.1574900035 0.379638906853 -1.19623791051" rpy="0.224178449253 -0.00758963460292 3.12106772132"/>
     <parent link="front_bar"/>
-    <child link="camera_top_left_link"/>
+    <child link="workspace_camera_right_link"/>
   </joint>
-  <link name="camera_top_left_link">
+  <link name="workspace_camera_right_link">
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <mass value="0.1"/>
@@ -942,31 +942,31 @@
       </geometry>
     </collision>
   </link>
-  <link name="camera_top_left_depth_frame"/>
-  <link name="camera_top_left_rgb_optical_frame"/>
-  <link name="camera_top_left_rgb_frame"/>
-  <link name="camera_top_left_depth_optical_frame"/>
-  <joint name="camera_top_left_base_link_joint" type="fixed">
+  <link name="workspace_camera_right_depth_frame"/>
+  <link name="workspace_camera_right_rgb_optical_frame"/>
+  <link name="workspace_camera_right_rgb_frame"/>
+  <link name="workspace_camera_right_depth_optical_frame"/>
+  <joint name="workspace_camera_right_base_link_joint" type="fixed">
     <origin xyz="0.0 -0.02 0.0" rpy="0.0 0.0 0.0"/>
-    <parent link="camera_top_left_link"/>
-    <child link="camera_top_left_depth_frame"/>
+    <parent link="workspace_camera_right_link"/>
+    <child link="workspace_camera_right_depth_frame"/>
   </joint>
-  <joint name="camera_top_left_base_link_joint2" type="fixed">
+  <joint name="workspace_camera_right_base_link_joint2" type="fixed">
     <origin xyz="0.0 -0.045 0.0" rpy="0.0 0.0 0.0"/>
-    <parent link="camera_top_left_link"/>
-    <child link="camera_top_left_rgb_frame"/>
+    <parent link="workspace_camera_right_link"/>
+    <child link="workspace_camera_right_rgb_frame"/>
   </joint>
-  <joint name="camera_top_left_base_link_joint3" type="fixed">
+  <joint name="workspace_camera_right_base_link_joint3" type="fixed">
     <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
-    <parent link="camera_top_left_depth_frame"/>
-    <child link="camera_top_left_depth_optical_frame"/>
+    <parent link="workspace_camera_right_depth_frame"/>
+    <child link="workspace_camera_right_depth_optical_frame"/>
   </joint>
-  <joint name="camera_top_left_base_link_joint4" type="fixed">
+  <joint name="workspace_camera_right_base_link_joint4" type="fixed">
     <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
-    <parent link="camera_top_left_rgb_frame"/>
-    <child link="camera_top_left_rgb_optical_frame"/>
+    <parent link="workspace_camera_right_rgb_frame"/>
+    <child link="workspace_camera_right_rgb_optical_frame"/>
   </joint>
-  <gazebo reference="camera_top_left_link"/>
+  <gazebo reference="workspace_camera_right_link"/>
   <link name="back_bar">
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>

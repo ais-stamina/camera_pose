@@ -9,6 +9,6 @@
   <node type="stamina_calibration_transform_publisher.py"
         pkg="camera_pose_calibration"
         name="stamina_calibration_transform_publisher"
-        args="./ur10.urdf endeffector_camera_rgb_optical_frame:endeffector_camera_frame_joint "
+        args="./ur10.urdf wrist_camera_rgb_optical_frame:wrist_camera_frame_joint "
         output="screen"/>
 </launch>
